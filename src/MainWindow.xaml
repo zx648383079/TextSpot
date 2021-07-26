@@ -26,7 +26,9 @@
             <Button x:Name="CopyBtn" Content="复制" Click="CopyBtn_Click"/>
             <Button x:Name="ClearBtn" Content="清空" Click="ClearBtn_Click"/>
         </StackPanel>
-        <TextBox Grid.Row="1" x:Name="TextTb" AcceptsTab="True" Drop="TextTb_Drop" DragEnter="TextTb_DragEnter">
+        <TextBox Grid.Row="1" x:Name="TextTb" AcceptsTab="True" 
+                 TextWrapping="Wrap"
+                 Drop="TextTb_Drop" DragEnter="TextTb_DragEnter">
             
         </TextBox>
         <TextBlock x:Name="MessageTb" Grid.Row="2"/>

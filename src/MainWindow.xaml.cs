@@ -38,6 +38,7 @@ namespace TextSpot
         private void SpotBtn_Click(object sender, RoutedEventArgs e)
         {
             Hide();
+            Thread.Sleep(500);
             var page = new SpotWindow();
             page.Spot += (_, image) =>
             {
@@ -54,15 +55,17 @@ namespace TextSpot
         private void CopyBtn_Click(object sender, RoutedEventArgs e)
         {
             Clipboard.SetData(DataFormats.Text, TextTb.Text); //复制内容到剪切
+            Toast("复制成功！");
         }
 
         private void Toast(string message)
         {
             MessageTb.Text = message;
             messageToken.Cancel();
+            messageToken = new CancellationTokenSource();
             _ = Task.Factory.StartNew(() =>
               {
-                  Thread.Sleep(2000);
+                  Thread.Sleep(3000);
                   Application.Current.Dispatcher.Invoke(() =>
                   {
                       MessageTb.Text = "";
