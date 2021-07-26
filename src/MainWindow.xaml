@@ -1,0 +1,34 @@
+﻿<Window x:Class="TextSpot.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TextSpot"
+        mc:Ignorable="d"
+        Title="TextSpot" Height="450" Width="800" 
+        WindowStartupLocation="CenterScreen" Unloaded="Window_Unloaded">
+    <Window.Resources>
+        <ResourceDictionary>
+            <Style TargetType="Button">
+                <Setter Property="Padding" Value="20 0"/>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal">
+            <Button x:Name="SpotBtn" Content="截图" Click="SpotBtn_Click"/>
+            <Button x:Name="OpenBtn" Content="识别" Click="OpenBtn_Click"/>
+            <Button x:Name="CopyBtn" Content="复制" Click="CopyBtn_Click"/>
+            <Button x:Name="ClearBtn" Content="清空" Click="ClearBtn_Click"/>
+        </StackPanel>
+        <TextBox Grid.Row="1" x:Name="TextTb" AcceptsTab="True" Drop="TextTb_Drop" DragEnter="TextTb_DragEnter">
+            
+        </TextBox>
+        <TextBlock x:Name="MessageTb" Grid.Row="2"/>
+    </Grid>
+</Window>
