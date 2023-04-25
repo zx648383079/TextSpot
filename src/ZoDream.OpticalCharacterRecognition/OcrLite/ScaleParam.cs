@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Emgu.CV;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -38,26 +39,26 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             return $"sw:{this.srcWidth},sh:{this.srcHeight},dw:{this.dstWidth},dh:{this.dstHeight},{this.scaleWidth},{this.scaleHeight}";
         }
 
-        public static ScaleParam GetScaleParam(Bitmap src, int dstSize)
+        public static ScaleParam GetScaleParam(Mat src, int dstSize)
         {
             int srcWidth, srcHeight, dstWidth, dstHeight;
-            srcWidth = src.Width;
-            dstWidth = src.Width;
-            srcHeight = src.Height;
-            dstHeight = src.Height;
+            srcWidth = src.Cols;
+            dstWidth = src.Cols;
+            srcHeight = src.Rows;
+            dstHeight = src.Rows;
 
             float scale = 1.0F;
             if (dstWidth > dstHeight)
             {
-                scale = (float)dstSize / (float)dstWidth;
+                scale = (float)dstSize / dstWidth;
                 dstWidth = dstSize;
-                dstHeight = (int)((float)dstHeight * scale);
+                dstHeight = (int)(dstHeight * scale);
             }
             else
             {
-                scale = (float)dstSize / (float)dstHeight;
+                scale = (float)dstSize / dstHeight;
                 dstHeight = dstSize;
-                dstWidth = (int)((float)dstWidth * scale);
+                dstWidth = (int)(dstWidth * scale);
             }
             if (dstWidth % 32 != 0)
             {
@@ -69,8 +70,8 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
                 dstHeight = (dstHeight / 32 - 1) * 32;
                 dstHeight = Math.Max(dstHeight, 32);
             }
-            float scaleWidth = (float)dstWidth / (float)srcWidth;
-            float scaleHeight = (float)dstHeight / (float)srcHeight;
+            float scaleWidth = (float)dstWidth / srcWidth;
+            float scaleHeight = (float)dstHeight / srcHeight;
             return new ScaleParam(srcWidth, srcHeight, dstWidth, dstHeight, scaleWidth, scaleHeight);
         }
     }

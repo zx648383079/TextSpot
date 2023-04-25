@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Emgu.CV.CvEnum;
+using Emgu.CV;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -12,9 +14,10 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
     {
         public bool IsPartImg { get; set; }
         public bool IsDebugImg { get; set; }
-        private readonly DbNet _dbNet = new();
-        private readonly AngleNet _angleNet = new();
-        private readonly CrnnNet _crnnNet = new();
+        private DbNet _dbNet = new();
+        private AngleNet _angleNet = new();
+        private CrnnNet _crnnNet = new();
+
 
         public void InitModels(string detPath, string clsPath, string recPath, string keysPath, int numThread)
         {
@@ -34,14 +37,16 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
         public OcrResult Detect(string img, int padding, int imgResize, float boxScoreThresh, float boxThresh,
                               float unClipRatio, bool doAngle, bool mostAngle)
         {
-            var originSrc = (Bitmap)Image.FromFile(img, true);//default : BGR
-            var originRect = new Rectangle(padding, padding, originSrc.Width, originSrc.Height);
+            var brgSrc = CvInvoke.Imread(img, ImreadModes.Color);//default : BGR
+            var originSrc = new Mat();
+            CvInvoke.CvtColor(brgSrc, originSrc, ColorConversion.Bgr2Rgb);// convert to RGB
+            var originRect = new Rectangle(padding, padding, originSrc.Cols, originSrc.Rows);
             var paddingSrc = OcrUtils.MakePadding(originSrc, padding);
 
             int resize;
             if (imgResize <= 0)
             {
-                resize = Math.Max(paddingSrc.Width, paddingSrc.Height);
+                resize = Math.Max(paddingSrc.Cols, paddingSrc.Rows);
             }
             else
             {
@@ -52,30 +57,10 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             return DetectOnce(paddingSrc, originRect, scale, boxScoreThresh, boxThresh, unClipRatio, doAngle, mostAngle);
         }
 
-        public OcrResult Detect(Bitmap originSrc, int padding, int imgResize, float boxScoreThresh, float boxThresh,
+        private OcrResult DetectOnce(Mat src, Rectangle originRect, ScaleParam scale, float boxScoreThresh, float boxThresh,
                               float unClipRatio, bool doAngle, bool mostAngle)
         {
-            var originRect = new Rectangle(padding, padding, originSrc.Width, originSrc.Height);
-            var paddingSrc = OcrUtils.MakePadding(originSrc, padding);
-
-            int resize;
-            if (imgResize <= 0)
-            {
-                resize = Math.Max(paddingSrc.Width, paddingSrc.Height);
-            }
-            else
-            {
-                resize = imgResize;
-            }
-            var scale = ScaleParam.GetScaleParam(paddingSrc, resize);
-
-            return DetectOnce(paddingSrc, originRect, scale, boxScoreThresh, boxThresh, unClipRatio, doAngle, mostAngle);
-        }
-
-        private OcrResult DetectOnce(Bitmap src, Rectangle originRect, ScaleParam scale, float boxScoreThresh, float boxThresh,
-                              float unClipRatio, bool doAngle, bool mostAngle)
-        {
-            var textBoxPaddingImg = (Bitmap)src.Clone();
+            var textBoxPaddingImg = src.Clone();
             int thickness = OcrUtils.GetThickness(src);
             Console.WriteLine("=====Start detect=====");
             var watcher = new Stopwatch();
@@ -85,28 +70,28 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             var textBoxes = _dbNet.GetTextBoxes(src, scale, boxScoreThresh, boxThresh, unClipRatio);
             watcher.Stop();
             var dbNetTime = watcher.ElapsedMilliseconds;
+            watcher.Start();
 
             Console.WriteLine($"TextBoxesSize({textBoxes.Count})");
             textBoxes.ForEach(x => Console.WriteLine(x));
             //Console.WriteLine($"dbNetTime({dbNetTime}ms)");
 
-            watcher.Start();
             Console.WriteLine("---------- step: drawTextBoxes ----------");
             OcrUtils.DrawTextBoxes(textBoxPaddingImg, textBoxes, thickness);
             //CvInvoke.Imshow("ResultPadding", textBoxPaddingImg);
 
             //---------- getPartImages ----------
-            var partImages = OcrUtils.GetPartImages(src, textBoxes);
+            List<Mat> partImages = OcrUtils.GetPartImages(src, textBoxes);
             if (IsPartImg)
             {
                 for (int i = 0; i < partImages.Count; i++)
                 {
-                    // CvInvoke.Imshow($"PartImg({i})", partImages[i]);
+                    CvInvoke.Imshow($"PartImg({i})", partImages[i]);
                 }
             }
 
             Console.WriteLine("---------- step: angleNet getAngles ----------");
-            var angles = _angleNet.GetAngles(partImages, doAngle, mostAngle);
+            List<Angle> angles = _angleNet.GetAngles(partImages, doAngle, mostAngle);
             //angles.ForEach(x => Console.WriteLine(x));
 
             //Rotate partImgs
@@ -118,12 +103,12 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
                 }
                 if (IsDebugImg)
                 {
-                    // CvInvoke.Imshow($"DebugImg({i})", partImages[i]);
+                    CvInvoke.Imshow($"DebugImg({i})", partImages[i]);
                 }
             }
 
             Console.WriteLine("---------- step: crnnNet getTextLines ----------");
-            var textLines = _crnnNet.GetTextLines(partImages);
+            List<TextLine> textLines = _crnnNet.GetTextLines(partImages);
             //textLines.ForEach(x => Console.WriteLine(x));
 
             var textBlocks = new List<TextBlock>();
@@ -150,9 +135,9 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             //Console.WriteLine($"fullDetectTime({fullDetectTime}ms)");
 
             //cropped to original size
-            //Mat rgbBoxImg = new Mat(textBoxPaddingImg, originRect);
-            //Mat boxImg = new Mat();
-            //CvInvoke.CvtColor(rgbBoxImg, boxImg, ColorConversion.Rgb2Bgr);//convert to BGR for Output Result Img
+            var rgbBoxImg = new Mat(textBoxPaddingImg, originRect);
+            var boxImg = new Mat();
+            CvInvoke.CvtColor(rgbBoxImg, boxImg, ColorConversion.Rgb2Bgr);//convert to BGR for Output Result Img
             //CvInvoke.Imshow("Result", boxImg);
 
             var strRes = new StringBuilder();
@@ -162,12 +147,13 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             {
                 TextBlocks = textBlocks,
                 DbNetTime = dbNetTime,
-                BoxImg = textBoxPaddingImg,
+                BoxImg = boxImg,
                 DetectTime = fullDetectTime,
                 StrRes = strRes.ToString()
             };
 
             return ocrResult;
         }
+
     }
 }

@@ -4,10 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
 using Clipper2Lib;
 using Emgu.CV.Util;
 using Emgu.CV;
@@ -16,14 +12,12 @@ using Emgu.CV.CvEnum;
 
 namespace ZoDream.OpticalCharacterRecognition.OcrLite
 {
-    public class DbNet
+    class DbNet
     {
         private readonly float[] MeanValues = { 0.485F * 255F, 0.456F * 255F, 0.406F * 255F };
         private readonly float[] NormValues = { 1.0F / 0.229F / 255.0F, 1.0F / 0.224F / 255.0F, 1.0F / 0.225F / 255.0F };
 
         private InferenceSession? _dbNet;
-
-        public DbNet() { }
 
         ~DbNet()
         {
@@ -49,20 +43,21 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             }
         }
 
-        public List<TextBox> GetTextBoxes(Bitmap src, ScaleParam scale, float boxScoreThresh, float boxThresh, float unClipRatio)
+        public List<TextBox> GetTextBoxes(Mat src, ScaleParam scale, float boxScoreThresh, float boxThresh, float unClipRatio)
         {
-            var srcResize = OcrUtils.Resize(src, scale.DstWidth, scale.DstHeight);
-            var inputTensors = OcrUtils.SubstractMeanNormalize(srcResize, MeanValues, NormValues);
+            var srcResize = new Mat();
+            CvInvoke.Resize(src, srcResize, new Size(scale.DstWidth, scale.DstHeight));
+            Tensor<float> inputTensors = OcrUtils.SubstractMeanNormalize(srcResize, MeanValues, NormValues);
             var inputs = new List<NamedOnnxValue>
             {
                 NamedOnnxValue.CreateFromTensor("input0", inputTensors)
             };
             try
             {
-                using var results = _dbNet!.Run(inputs);
+                using IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results = _dbNet.Run(inputs);
                 var resultsArray = results.ToArray();
                 Console.WriteLine(resultsArray);
-                var textBoxes = GetTextBoxes(resultsArray, srcResize.Height, srcResize.Width, scale, boxScoreThresh, boxThresh, unClipRatio);
+                var textBoxes = GetTextBoxes(resultsArray, srcResize.Rows, srcResize.Cols, scale, boxScoreThresh, boxThresh, unClipRatio);
                 return textBoxes;
             }
             catch (Exception ex)
@@ -74,17 +69,17 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
 
         private static List<TextBox> GetTextBoxes(DisposableNamedOnnxValue[] outputTensor, int rows, int cols, ScaleParam s, float boxScoreThresh, float boxThresh, float unClipRatio)
         {
-            var minArea = 3.0f;
+            float minArea = 3.0f;
             var rsBoxes = new List<TextBox>();
 
-            var outputData = outputTensor[0].AsEnumerable<float>().ToArray();
+            float[] outputData = outputTensor[0].AsEnumerable<float>().ToArray();
             var norf = new List<byte>();
             foreach (float data in outputData)
             {
-                var val = data > boxThresh ? 255 : 0;
+                int val = data > boxThresh ? 255 : 0;
                 norf.Add((byte)val);
             }
-            var fMapMat = new Mat(rows, cols, DepthType.Cv32F, 1);
+            Mat fMapMat = new Mat(rows, cols, DepthType.Cv32F, 1);
             fMapMat.SetTo(outputData);
             Console.WriteLine(fMapMat);
 
@@ -127,15 +122,13 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
 
                     int y = (int)(item.Y / s.ScaleHeight);
                     int pty = Math.Min(Math.Max(y, 0), s.SrcHeight);
-                    var dstPt = new Point(ptx, pty);
+                    Point dstPt = new Point(ptx, pty);
                     finalPoints.Add(dstPt);
                 }
 
-                var textBox = new TextBox
-                {
-                    Score = (float)score,
-                    Points = finalPoints
-                };
+                TextBox textBox = new TextBox();
+                textBox.Score = (float)score;
+                textBox.Points = finalPoints;
                 rsBoxes.Add(textBox);
             }
             rsBoxes.Reverse();
@@ -144,7 +137,7 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
 
         private static List<PointF> GetMiniBox(List<Point> contours, out float minEdgeSize)
         {
-            VectorOfPoint vop = new VectorOfPoint();
+            var vop = new VectorOfPoint();
             vop.Push(contours.ToArray<Point>());
             return GetMiniBox(vop, out minEdgeSize);
         }
@@ -256,8 +249,8 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
                 int roiWidth = xmax - xmin + 1;
                 int roiHeight = ymax - ymin + 1;
 
-                var bitmap = fMapMat.ToImage<Gray, float>();
-                var roiBitmap = new Image<Gray, float>(roiWidth, roiHeight);
+                Image<Gray, float> bitmap = fMapMat.ToImage<Gray, float>();
+                Image<Gray, float> roiBitmap = new Image<Gray, float>(roiWidth, roiHeight);
                 float[,,] dataFloat = bitmap.Data;
                 float[,,] data = roiBitmap.Data;
 
@@ -276,8 +269,8 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
                     }
                 }
 
-                var mask = Mat.Zeros(roiHeight, roiWidth, DepthType.Cv8U, 1);
-                var pts = new List<Point>();
+                Mat mask = Mat.Zeros(roiHeight, roiWidth, DepthType.Cv8U, 1);
+                List<Point> pts = new List<Point>();
                 foreach (Point point in contours.ToArray())
                 {
                     pts.Add(new Point(point.X - xmin, point.Y - ymin));
@@ -295,6 +288,7 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             {
                 Console.WriteLine(ex.Message + ex.StackTrace);
             }
+
             return 0;
         }
 
@@ -303,14 +297,14 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             var theCliperPts = new Path64();
             foreach (var pt in box)
             {
-                theCliperPts.Add(new Point64(pt.X, pt.Y));
+                theCliperPts.Add(new Point64((double)pt.X, (double)pt.Y));
             }
 
             float area = Math.Abs(SignedPolygonArea(box.ToArray<PointF>()));
             double length = LengthOfPoints(box);
             double distance = area * unclip_ratio / length;
 
-            var co = new ClipperOffset();
+            ClipperOffset co = new ClipperOffset();
             co.AddPath(theCliperPts, JoinType.Round, EndType.Polygon);
             var solution = new Paths64();
             co.Execute(distance, solution);
@@ -324,6 +318,7 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             {
                 retPts.Add(new Point((int)ip.X, (int)ip.Y));
             }
+
             return retPts;
         }
 
@@ -375,5 +370,6 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             box.RemoveAt(count - 1);
             return length;
         }
+
     }
 }

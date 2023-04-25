@@ -1,5 +1,6 @@
 ﻿using Emgu.CV;
 using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using System;
 using System.Collections.Generic;
@@ -10,27 +11,23 @@ using System.Threading.Tasks;
 
 namespace ZoDream.OpticalCharacterRecognition.OcrLite
 {
-    public static class OcrUtils
+    class OcrUtils
     {
-        public static Tensor<float> SubstractMeanNormalize(Bitmap src, float[] meanVals, float[] normVals)
+        public static Tensor<float> SubstractMeanNormalize(Mat src, float[] meanVals, float[] normVals)
         {
-            int cols = src.Width;
-            int rows = src.Height;
-            int channels = 3;
-            // byte[,,] imgData = srcImg.Data;
+            int cols = src.Cols;
+            int rows = src.Rows;
+            int channels = src.NumberOfChannels;
+            Image<Rgb, byte> srcImg = src.ToImage<Rgb, byte>();
+            byte[,,] imgData = srcImg.Data;
             Tensor<float> inputTensor = new DenseTensor<float>(new[] { 1, channels, rows, cols });
             for (int r = 0; r < rows; r++)
             {
                 for (int c = 0; c < cols; c++)
                 {
-                    var color = src.GetPixel(c, r);
-                    for (var ch = 0; ch < channels; ch++)
+                    for (int ch = 0; ch < channels; ch++)
                     {
-                        var value = ch switch { 
-                            1 => color.G,
-                            2 => color.B,
-                            _ => color.R,
-                        };
+                        var value = imgData[r, c, ch];
                         float data = (float)(value * normVals[ch] - meanVals[ch] * normVals[ch]);
                         inputTensor[0, ch, r, c] = data;
                     }
@@ -38,60 +35,37 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             }
             return inputTensor;
         }
-        /// <summary>
-        /// 给图像边缘增加区域
-        /// </summary>
-        /// <param name="src"></param>
-        /// <param name="padding"></param>
-        /// <returns></returns>
-        public static Bitmap MakePadding(Bitmap src, int padding)
+
+        public static Mat MakePadding(Mat src, int padding)
         {
-            if (padding <= 0)
-            {
-                return src;
-            }
-            var paddingSrc = new Bitmap(src.Width + padding * 2, src.Height + padding * 2, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            using var g = Graphics.FromImage(paddingSrc);
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            g.Clear(Color.White);
-            g.DrawImage(src, new Point(padding, padding));
-            g.Save();
-            src.Dispose();
+            if (padding <= 0) return src;
+            MCvScalar paddingScalar = new MCvScalar(255, 255, 255);
+            Mat paddingSrc = new Mat();
+            CvInvoke.CopyMakeBorder(src, paddingSrc, padding, padding, padding, padding, BorderType.Isolated, paddingScalar);
             return paddingSrc;
         }
 
-        public static Bitmap Resize(Bitmap src, int width, int height)
+        public static int GetThickness(Mat boxImg)
         {
-            var dst = new Bitmap(width, height);
-            using var g = Graphics.FromImage(dst);
-            g.DrawImage(src, 0,0, width,height);
-            g.Save();
-            return dst;
-        }
-
-        public static int GetThickness(Bitmap boxImg)
-        {
-            int minSize = boxImg.Width > boxImg.Height ? boxImg.Height : boxImg.Width;
+            int minSize = boxImg.Cols > boxImg.Rows ? boxImg.Rows : boxImg.Cols;
             int thickness = minSize / 1000 + 2;
             return thickness;
         }
 
-        public static void DrawTextBox(Bitmap boxImg, List<Point> box, int thickness)
+        public static void DrawTextBox(Mat boxImg, List<Point> box, int thickness)
         {
             if (box == null || box.Count == 0)
             {
                 return;
             }
-            var pen = new Pen(Color.Red, thickness);
-            using var g = Graphics.FromImage(boxImg);
-            g.DrawLine(pen, box[0], box[1]);
-            g.DrawLine(pen, box[1], box[2]);
-            g.DrawLine(pen, box[2], box[3]);
-            g.DrawLine(pen, box[3], box[0]);
-            g.Save();
+            var color = new MCvScalar(255, 0, 0);//R(255) G(0) B(0)
+            CvInvoke.Line(boxImg, box[0], box[1], color, thickness);
+            CvInvoke.Line(boxImg, box[1], box[2], color, thickness);
+            CvInvoke.Line(boxImg, box[2], box[3], color, thickness);
+            CvInvoke.Line(boxImg, box[3], box[0], color, thickness);
         }
 
-        public static void DrawTextBoxes(Bitmap src, List<TextBox> textBoxes, int thickness)
+        public static void DrawTextBoxes(Mat src, List<TextBox> textBoxes, int thickness)
         {
             for (int i = 0; i < textBoxes.Count; i++)
             {
@@ -100,12 +74,12 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             }
         }
 
-        public static List<Bitmap> GetPartImages(Bitmap src, List<TextBox> textBoxes)
+        public static List<Mat> GetPartImages(Mat src, List<TextBox> textBoxes)
         {
-            var partImages = new List<Bitmap>();
+            List<Mat> partImages = new List<Mat>();
             for (int i = 0; i < textBoxes.Count; ++i)
             {
-                var partImg = GetRotateCropImage(src, textBoxes[i].Points);
+                Mat partImg = GetRotateCropImage(src, textBoxes[i].Points);
                 //Mat partImg = new Mat();
                 //GetRoiFromBox(src, partImg, textBoxes[i].Points);
                 partImages.Add(partImg);
@@ -113,20 +87,11 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             return partImages;
         }
 
-        public static Bitmap CopyPart(Bitmap src, Rectangle rect)
+        public static Mat GetRotateCropImage(Mat src, List<Point> box)
         {
-            var dst = new Bitmap(rect.Width, rect.Height);
-            using var g = Graphics.FromImage(dst);
-            g.DrawImage(src, 
-                new Rectangle(0, 0, rect.Width, rect.Height), rect, GraphicsUnit.Pixel);
-            g.Save();
-            return dst;
-        }
-
-        public static Bitmap GetRotateCropImage(Bitmap src, List<Point> box)
-        {
-            var image = new Bitmap(src);
-            var points = new List<Point>();
+            Mat image = new Mat();
+            src.CopyTo(image);
+            List<Point> points = new List<Point>();
             points.AddRange(box);
 
             int[] collectX = { box[0].X, box[1].X, box[2].X, box[3].X };
@@ -136,8 +101,8 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             int top = collectY.Min();
             int bottom = collectY.Max();
 
-            var rect = new Rectangle(left, top, right - left, bottom - top);
-            var imgCrop = CopyPart(src, rect);
+            Rectangle rect = new Rectangle(left, top, right - left, bottom - top);
+            Mat imgCrop = new Mat(image, rect);
 
             for (int i = 0; i < points.Count; i++)
             {
@@ -166,52 +131,39 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             var ptsSrc3 = new PointF(points[3].X, points[3].Y);
 
             PointF[] ptsSrc = { ptsSrc0, ptsSrc1, ptsSrc2, ptsSrc3 };
-            // 透视转化
+
             Mat M = CvInvoke.GetPerspectiveTransform(ptsSrc, ptsDst);
 
-            var partImg = new Mat();
-            // 对图像进行透视变换，就是变形
-            CvInvoke.WarpPerspective(imgCrop.ToMat(), partImg, M,
+            Mat partImg = new Mat();
+            CvInvoke.WarpPerspective(imgCrop, partImg, M,
                                 new Size(imgCropWidth, imgCropHeight), Inter.Nearest, Warp.Default,
                                BorderType.Replicate);
 
-            if (partImg.Height >= partImg.Width * 1.5)
+            if (partImg.Rows >= partImg.Cols * 1.5)
             {
-                var srcCopy = new Mat();
-                // 转置，相当于沿对角线翻转
+                Mat srcCopy = new Mat();
                 CvInvoke.Transpose(partImg, srcCopy);
-                // 垂直翻转图像
                 CvInvoke.Flip(srcCopy, srcCopy, 0);
-                return srcCopy.ToBitmap();
+                return srcCopy;
             }
             else
             {
-                return partImg.ToBitmap();
+                return partImg;
             }
         }
 
-        /// <summary>
-        /// 垂直翻转加水平翻转
-        /// </summary>
-        /// <param name="src"></param>
-        /// <returns></returns>
-        public static Bitmap MatRotateClockWise180(Bitmap src)
+        public static Mat MatRotateClockWise180(Mat src)
         {
-            src.RotateFlip(RotateFlipType.Rotate180FlipNone);
-            //CvInvoke.Flip(src, src, FlipType.Vertical);
-            //CvInvoke.Flip(src, src, FlipType.Horizontal);
+            CvInvoke.Flip(src, src, FlipType.Vertical);
+            CvInvoke.Flip(src, src, FlipType.Horizontal);
             return src;
         }
 
-        /// <summary>
-        /// 逆时针旋转90
-        /// </summary>
-        /// <param name="src"></param>
-        /// <returns></returns>
-        public static Bitmap MatRotateClockWise90(Bitmap src)
+        public static Mat MatRotateClockWise90(Mat src)
         {
-            src.RotateFlip(RotateFlipType.Rotate270FlipXY);
+            CvInvoke.Rotate(src, src, RotateFlags.Rotate90CounterClockwise);
             return src;
         }
+
     }
 }

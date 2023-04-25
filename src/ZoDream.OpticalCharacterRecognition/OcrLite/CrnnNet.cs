@@ -6,20 +6,20 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 using ZoDream.Shared.Storage;
+using Emgu.CV;
+using Microsoft.ML.OnnxRuntime.Tensors;
 
 namespace ZoDream.OpticalCharacterRecognition.OcrLite
 {
-    public class CrnnNet
+    class CrnnNet
     {
         private readonly float[] MeanValues = { 127.5F, 127.5F, 127.5F };
         private readonly float[] NormValues = { 1.0F / 127.5F, 1.0F / 127.5F, 1.0F / 127.5F };
-        private const int _crnnDstHeight = 32;
-        private const int _crnnCols = 5531;
+        private const int CrnnDstHeight = 32;
+        private const int CrnnCols = 5531;
 
         private InferenceSession? _crnnNet;
         private List<string> _keys = new();
-
-        public CrnnNet() { }
 
         ~CrnnNet()
         {
@@ -59,7 +59,7 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             return keys;
         }
 
-        public List<TextLine> GetTextLines(List<Bitmap> partImgs)
+        public List<TextLine> GetTextLines(List<Mat> partImgs)
         {
             var textLines = new List<TextLine>();
             for (int i = 0; i < partImgs.Count; i++)
@@ -74,15 +74,16 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             return textLines;
         }
 
-        private TextLine GetTextLine(Bitmap src)
+        private TextLine GetTextLine(Mat src)
         {
-            var textLine = new TextLine();
+            TextLine textLine = new TextLine();
 
-            var scale = (float)_crnnDstHeight / src.Height;
-            int dstWidth = (int)(src.Width * scale);
+            var scale = (float)CrnnDstHeight / src.Rows;
+            int dstWidth = (int)(src.Cols * scale);
 
-            var srcResize = OcrUtils.Resize(src, dstWidth, _crnnDstHeight);
-            var inputTensors = OcrUtils.SubstractMeanNormalize(srcResize, MeanValues, NormValues);
+            var srcResize = new Mat();
+            CvInvoke.Resize(src, srcResize, new Size(dstWidth, CrnnDstHeight));
+            Tensor<float> inputTensors = OcrUtils.SubstractMeanNormalize(srcResize, MeanValues, NormValues);
             var inputs = new List<NamedOnnxValue>
             {
                 NamedOnnxValue.CreateFromTensor("input", inputTensors)
@@ -92,11 +93,11 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
                 using IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results = _crnnNet!.Run(inputs);
                 var resultsArray = results.ToArray();
                 Console.WriteLine(resultsArray);
-                var outputData = resultsArray[0].AsEnumerable<float>().ToArray();
+                float[] outputData = resultsArray[0].AsEnumerable<float>().ToArray();
 
-                var crnnRows = outputData.Count() / _crnnCols;
+                int crnnRows = outputData.Count() / CrnnCols;
 
-                return ScoreToTextLine(outputData, crnnRows, _crnnCols);
+                return ScoreToTextLine(outputData, crnnRows, CrnnCols);
             }
             catch (Exception ex)
             {
@@ -109,11 +110,11 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
 
         private TextLine ScoreToTextLine(float[] srcData, int rows, int cols)
         {
-            var sb = new StringBuilder();
-            var textLine = new TextLine();
+            StringBuilder sb = new StringBuilder();
+            TextLine textLine = new TextLine();
 
             int lastIndex = 0;
-            var scores = new List<float>();
+            List<float> scores = new List<float>();
 
             for (int i = 0; i < rows; i++)
             {
@@ -121,7 +122,7 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
                 float maxValue = -1000F;
 
                 //do softmax
-                var expList = new List<float>();
+                List<float> expList = new List<float>();
                 for (int j = 0; j < cols; j++)
                 {
                     float expSingle = (float)Math.Exp(srcData[i * cols + j]);
@@ -159,4 +160,5 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
         }
 
     }
+
 }

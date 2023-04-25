@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Emgu.CV;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -72,7 +73,7 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
     {
         public List<TextBlock> TextBlocks { get; set; }
         public float DbNetTime { get; set; }
-        public Bitmap BoxImg { get; set; }
+        public Mat BoxImg { get; set; }
         public float DetectTime { get; set; }
         public string StrRes { get; set; }
 

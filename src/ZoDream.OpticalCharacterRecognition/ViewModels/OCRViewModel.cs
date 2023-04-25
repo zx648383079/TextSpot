@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Emgu.CV;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -59,10 +60,16 @@ namespace ZoDream.OpticalCharacterRecognition.ViewModels
 
         private void LoadFile(string fileName)
         {
-            ImageBitmap = (Bitmap)Image.FromFile(fileName);
-            var res = Engine.Detect(ImageBitmap, 50, 1024, 0.618f, 0.3f, 2.0f, true, true);
+            try
+            {
+                ImageBitmap = (Bitmap)Image.FromFile(fileName);
+            }
+            catch (Exception)
+            {
+            }
+            var res = Engine.Detect(fileName, 50, 1024, 0.618f, 0.3f, 2.0f, true, true);
             Text = res.StrRes;
-            ImageBitmap = res.BoxImg;
+            ImageBitmap = res.BoxImg.ToBitmap();
         }
 
         public void Dispose()
