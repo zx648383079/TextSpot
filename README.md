@@ -9,6 +9,7 @@
 
 ## OcrLite
 
+中文识别的效果最好
 
 [chineseocr_lite](https://github.com/DayBreak-u/chineseocr_lite)
 
