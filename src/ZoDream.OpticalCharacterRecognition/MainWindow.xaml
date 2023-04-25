@@ -1,0 +1,46 @@
+﻿<Window x:Class="ZoDream.OpticalCharacterRecognition.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:sctl="clr-namespace:ZoDream.Shared.Controls;assembly=ZoDream.Shared.Controls"
+        xmlns:vm="clr-namespace:ZoDream.OpticalCharacterRecognition.ViewModels"
+        xmlns:local="clr-namespace:ZoDream.OpticalCharacterRecognition"
+        mc:Ignorable="d"
+        Title="OCR" Height="450" Width="800" 
+        WindowStartupLocation="CenterScreen"
+        Loaded="Window_Loaded" 
+        Unloaded="Window_Unloaded">
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+    <Grid>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="80"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <StackPanel Orientation="Horizontal" Style="{StaticResource PrimaryPanel}">
+                <sctl:IconButton Icon="&#xE10F;" Label="主页" Command="{Binding HomeCommand}" Style="{StaticResource TopLargeIcon}"/>
+                <sctl:IconButton Icon="&#xE773;" Label="OCR" Command="{Binding ScanCommand}" Style="{StaticResource TopLargeIcon}"/>
+                <sctl:IconButton Icon="&#xE7C9;" Label="AI训练" Command="{Binding TrainCommand}" Style="{StaticResource TopLargeIcon}"/>
+                <sctl:IconButton Icon="&#xE115;" Label="设置" Command="{Binding SettingCommand}" Style="{StaticResource TopLargeIcon}"/>
+            </StackPanel>
+            <Grid Grid.Row="1" Style="{StaticResource BodyPanel}">
+                <Frame x:Name="BodyPanel" NavigationUIVisibility="Hidden"/>
+            </Grid>
+        </Grid>
+        <Grid Style="{StaticResource PrimaryPanel}" Visibility="{Binding IsHome,Converter={StaticResource ToggleCvt}}">
+            <Grid Style="{StaticResource CenterPanel}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <sctl:IconButton Icon="&#xE773;" Label="OCR" Command="{Binding ScanCommand}" Style="{StaticResource LargeIcon}"/>
+                <sctl:IconButton Icon="&#xE7C9;" Label="AI训练" Command="{Binding TrainCommand}" Grid.Column="1" Style="{StaticResource LargeIcon}"/>
+                <sctl:IconButton Icon="&#xE115;" Label="设置" Command="{Binding SettingCommand}" Grid.Column="2" Style="{StaticResource LargeIcon}"/>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
