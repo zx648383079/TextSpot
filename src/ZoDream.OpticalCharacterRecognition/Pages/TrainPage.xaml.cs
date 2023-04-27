@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using ZoDream.OpticalCharacterRecognition.ViewModels;
 
 namespace ZoDream.OpticalCharacterRecognition.Pages
 {
@@ -23,6 +24,18 @@ namespace ZoDream.OpticalCharacterRecognition.Pages
         public TrainPage()
         {
             InitializeComponent();
+        }
+
+        public TrainViewModel ViewModel => (TrainViewModel)DataContext;
+
+        private void Page_Unloaded(object sender, RoutedEventArgs e)
+        {
+            ViewModel.Dispose();
+        }
+
+        private void Page_Loaded(object sender, RoutedEventArgs e)
+        {
+            ViewModel.InkPanel = InkPanel;
         }
     }
 }

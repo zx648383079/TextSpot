@@ -7,6 +7,7 @@
       xmlns:ctl="clr-namespace:ZoDream.OpticalCharacterRecognition.Controls"
       xmlns:Behaviors="http://schemas.microsoft.com/xaml/behaviors"
       xmlns:bhv="clr-namespace:ZoDream.Shared.Behaviors"
+      xmlns:sctl="clr-namespace:ZoDream.Shared.Controls;assembly=ZoDream.Shared.Controls"
       xmlns:local="clr-namespace:ZoDream.OpticalCharacterRecognition.Pages"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
@@ -26,13 +27,28 @@
             <Behaviors:Interaction.Behaviors>
                 <bhv:DragFileBehavior Command="{Binding DragCommand}"/>
             </Behaviors:Interaction.Behaviors>
-            <ctl:ImagePreview ImageSource="{Binding ImageBitmap}"/>
+            <Grid>
+                <TextBlock Text="拖放图片到此处" Foreground="LightGray" 
+                           FontSize="40" 
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <ctl:ImagePreview ImageSource="{Binding ImageBitmap}"/>
+            </Grid>
         </GroupBox>
         <GroupBox Header="识别结果" Grid.Column="1" >
-            <TextBox Text="{Binding Text}"
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition Height="40"/>
+                </Grid.RowDefinitions>
+                <TextBox Text="{Binding Text}"
                      Padding="5"
-                 AcceptsReturn="True" 
-                 AcceptsTab="True"/>
+                     AcceptsReturn="True" 
+                     AcceptsTab="True"/>
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                    <sctl:SwitchInput Value="{Binding IsAppend}" OffLabel="覆盖" OnLabel="追加"/>
+                    <sctl:IconButton Icon="&#xE105;" Label="保存为" Command="{Binding SaveAsCommand}"/>
+                </StackPanel>
+            </Grid>
         </GroupBox>
     </Grid>
 </Page>

@@ -3,12 +3,68 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:ctl="clr-namespace:ZoDream.OpticalCharacterRecognition.Controls"
+      xmlns:sctl="clr-namespace:ZoDream.Shared.Controls;assembly=ZoDream.Shared.Controls"
+      xmlns:vm="clr-namespace:ZoDream.OpticalCharacterRecognition.ViewModels"
       xmlns:local="clr-namespace:ZoDream.OpticalCharacterRecognition.Pages"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
-      Title="TrainPage">
+      Title="TrainPage"
+      Loaded="Page_Loaded"
+      Unloaded="Page_Unloaded">
+
+    <Page.Resources>
+        <ResourceDictionary Source="/Themes/TrainSkin.xaml"/>
+    </Page.Resources>
+    <Page.DataContext>
+        <vm:TrainViewModel/>
+    </Page.DataContext>
 
     <Grid>
-        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="80"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="字体：" Style="{StaticResource HeaderTb}"/>
+        <sctl:FileInput FileName="{Binding FontFileName,Mode=TwoWay}" Filter="字体|*.ttf" Grid.Column="1" Grid.ColumnSpan="2"/>
+        <TextBlock Grid.Row="1" Text="文字范围：" Style="{StaticResource HeaderTb}"/>
+        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
+            <TextBox Text="{Binding BeginChar}" Style="{StaticResource RangeTb}"/>
+            <TextBlock Text="~" Style="{StaticResource HeaderTb}"/>
+            <TextBox Text="{Binding EndChar}" Style="{StaticResource RangeTb}"/>
+        </StackPanel>
+        <Button Content="训练" Command="{Binding ExecuteCommand}" 
+                IsEnabled="{Binding ExecuteEnabled}"
+                Grid.Column="2" Grid.Row="1"/>
+        <Grid Grid.Row="2" Grid.ColumnSpan="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <GroupBox Header="手写图/输入图">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition Height="40"/>
+                    </Grid.RowDefinitions>
+                    <InkCanvas x:Name="InkPanel"/>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal">
+                        <sctl:IconButton Icon="&#xE108;" Label="画笔变细" Command="{Binding InkMinusCommand}"/>
+                        <sctl:IconButton Icon="&#xE109;" Label="画笔变粗" Command="{Binding InkPlusCommand}"/>
+                        <sctl:IconButton Icon="&#xE149;" Label="清空" Command="{Binding InkRefreshCommand}"/>
+                        <sctl:IconButton Icon="&#xE164;" Label="预测" Command="{Binding PredictionCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </GroupBox>
+            <GroupBox Header="输出预测" Grid.Column="1">
+                <ctl:ImagePreview ImageSource="{Binding ImageBitmap}"/>
+            </GroupBox>
+        </Grid>
     </Grid>
 </Page>

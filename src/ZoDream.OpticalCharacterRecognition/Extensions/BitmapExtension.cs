@@ -3,6 +3,8 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
+using SkiaSharp;
+using System.IO;
 
 namespace ZoDream.Studio.Extensions
 {
@@ -26,6 +28,13 @@ namespace ZoDream.Studio.Extensions
             var bitmapSource = BitmapSource.Create(bitmap.Width, bitmap.Height, 96, 96, PixelFormats.Bgr24, MyBitmapPalette, bmpData.Scan0, bitmap.Width * bitmap.Height * 3, bitmap.Width * 3);
             bitmap.UnlockBits(bmpData);
             return bitmapSource;
+        }
+
+        public static SKBitmap ToSKBitmap(this Bitmap bitmap)
+        {
+            using var outStream = new MemoryStream();
+            bitmap.Save(outStream, ImageFormat.Bmp);
+            return SKBitmap.Decode(outStream);
         }
     }
 }

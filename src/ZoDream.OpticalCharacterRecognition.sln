@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZoDream.Shared", "..\shared
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZoDream.Shared.Controls", "..\shared\ZoDream.Shared.Controls\ZoDream.Shared.Controls.csproj", "{1DD18D8B-A6D8-4C9C-A672-5AAA826EE30F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZoDream.Tests", "ZoDream.Tests\ZoDream.Tests.csproj", "{9372FD29-5865-499F-B7BA-AF06D1C4C51C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,14 @@ Global
 		{1DD18D8B-A6D8-4C9C-A672-5AAA826EE30F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1DD18D8B-A6D8-4C9C-A672-5AAA826EE30F}.Release|x64.ActiveCfg = Release|Any CPU
 		{1DD18D8B-A6D8-4C9C-A672-5AAA826EE30F}.Release|x64.Build.0 = Release|Any CPU
+		{9372FD29-5865-499F-B7BA-AF06D1C4C51C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9372FD29-5865-499F-B7BA-AF06D1C4C51C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9372FD29-5865-499F-B7BA-AF06D1C4C51C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9372FD29-5865-499F-B7BA-AF06D1C4C51C}.Debug|x64.Build.0 = Debug|Any CPU
+		{9372FD29-5865-499F-B7BA-AF06D1C4C51C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9372FD29-5865-499F-B7BA-AF06D1C4C51C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9372FD29-5865-499F-B7BA-AF06D1C4C51C}.Release|x64.ActiveCfg = Release|Any CPU
+		{9372FD29-5865-499F-B7BA-AF06D1C4C51C}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -40,13 +40,13 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message + ex.StackTrace);
-                throw ex;
+                throw;
             }
         }
 
         public List<Angle> GetAngles(List<Mat> partImgs, bool doAngle, bool mostAngle)
         {
-            List<Angle> angles = new List<Angle>();
+            var angles = new List<Angle>();
             if (doAngle)
             {
                 for (int i = 0; i < partImgs.Count; i++)
@@ -72,7 +72,7 @@ namespace ZoDream.OpticalCharacterRecognition.OcrLite
             //Most Possible AngleIndex
             if (doAngle && mostAngle)
             {
-                List<int> angleIndexes = new List<int>();
+                var angleIndexes = new List<int>();
                 angles.ForEach(x => angleIndexes.Add(x.Index));
 
                 double sum = angleIndexes.Sum();

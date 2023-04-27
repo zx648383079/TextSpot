@@ -18,10 +18,14 @@
     <PackageReference Include="Emgu.CV" Version="4.7.0.5276" />
     <PackageReference Include="Emgu.CV.Bitmap" Version="4.7.0.5276" />
     <PackageReference Include="Emgu.CV.runtime.windows" Version="4.7.0.5276" />
+    <PackageReference Include="FontInfo" Version="1.2.0" />
     <PackageReference Include="Microsoft.ML" Version="2.0.1" />
     <PackageReference Include="Microsoft.ML.ImageAnalytics" Version="2.0.1" />
+    <PackageReference Include="Microsoft.ML.OnnxConverter" Version="0.20.1" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.14.1" />
     <PackageReference Include="Microsoft.ML.OnnxTransformer" Version="2.0.1" />
+    <PackageReference Include="Microsoft.ML.TensorFlow" Version="2.0.1" />
+    <PackageReference Include="Microsoft.ML.Vision" Version="2.0.1" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.39" />
     <PackageReference Include="SkiaSharp" Version="2.88.3" />
     <PackageReference Include="SkiaSharp.Views.WPF" Version="2.88.3" />

@@ -3,11 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
-using ZoDream.OpticalCharacterRecognition.OcrLite;
+using ZoDream.Shared.Storage;
 using ZoDream.Shared.ViewModel;
 using ZoDream.Shared.ViewModels;
 
@@ -18,6 +15,7 @@ namespace ZoDream.OpticalCharacterRecognition.ViewModels
         public OCRViewModel()
         {
             DragCommand = new RelayCommand(TapOpenDrag);
+            SaveAsCommand = new RelayCommand(TapSaveAs);
             var baseFolder = AppDomain.CurrentDomain.BaseDirectory;
             Engine.InitModels(
                 Path.Combine(baseFolder, "models", "dbnet.onnx"),
@@ -38,6 +36,13 @@ namespace ZoDream.OpticalCharacterRecognition.ViewModels
             set => Set(ref imageBitmap, value);
         }
 
+        private bool isAppend;
+
+        public bool IsAppend {
+            get => isAppend;
+            set => Set(ref isAppend, value);
+        }
+
         private string text = string.Empty;
 
         public string Text {
@@ -45,6 +50,22 @@ namespace ZoDream.OpticalCharacterRecognition.ViewModels
             set => Set(ref text, value);
         }
         public ICommand DragCommand { get; private set; }
+        public ICommand SaveAsCommand { get; private set; }
+
+        private void TapSaveAs(object? _)
+        {
+            var picker = new Microsoft.Win32.SaveFileDialog
+            {
+                RestoreDirectory = true,
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                Filter = "文本文件|*.txt|所有文件|*.*"
+            };
+            if (picker.ShowDialog() != true)
+            {
+                return;
+            }
+            _ = LocationStorage.WriteAsync(picker.FileName, Text);
+        }
         private void TapOpenDrag(object? arg)
         {
             if (arg is IEnumerable<string> items)
@@ -68,7 +89,7 @@ namespace ZoDream.OpticalCharacterRecognition.ViewModels
             {
             }
             var res = Engine.Detect(fileName, 50, 1024, 0.618f, 0.3f, 2.0f, true, true);
-            Text = res.StrRes;
+            Text = IsAppend && !string.IsNullOrWhiteSpace(Text) ? $"{Text}\n{res.StrRes}" : res.StrRes;
             ImageBitmap = res.BoxImg.ToBitmap();
         }
 
